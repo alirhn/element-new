@@ -35,11 +35,17 @@ class FakeMediaPlayer(
 
     override val state: StateFlow<MediaPlayer.State> = _state.asStateFlow()
 
+    private var _backgroundPlaybackEnabled = false
+
+    override val isBackgroundPlaybackEnabled: Boolean
+        get() = _backgroundPlaybackEnabled
+
     override suspend fun setMedia(
         uri: String,
         mediaId: String,
         mimeType: String,
         startPositionMs: Long,
+        title: String?,
     ): MediaPlayer.State {
         _state.update {
             it.copy(
@@ -96,7 +102,15 @@ class FakeMediaPlayer(
         }
     }
 
+    override fun enableBackgroundPlayback() {
+        _backgroundPlaybackEnabled = true
+    }
+
+    override fun disableBackgroundPlayback() {
+        _backgroundPlaybackEnabled = false
+    }
+
     override fun close() {
-        // no-op
+        _backgroundPlaybackEnabled = false
     }
 }

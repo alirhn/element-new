@@ -139,7 +139,9 @@ class ThreadedMessagesNode(
                 appNavigationStateService.onLeavingThread(id)
             },
             onDestroy = {
-                mediaPlayer.close()
+                if (!mediaPlayer.isBackgroundPlaybackEnabled) {
+                    mediaPlayer.close()
+                }
             }
         )
     }

@@ -21,6 +21,11 @@ interface MediaPlayer : AutoCloseable {
     val state: StateFlow<State>
 
     /**
+     * Whether background playback is currently active.
+     */
+    val isBackgroundPlaybackEnabled: Boolean
+
+    /**
      * Initialises the player with a new media item, will suspend until the player is ready.
      *
      * @return the ready state of the player.
@@ -30,6 +35,7 @@ interface MediaPlayer : AutoCloseable {
         mediaId: String,
         mimeType: String,
         startPositionMs: Long = 0,
+        title: String? = null,
     ): State
 
     /**
@@ -46,6 +52,16 @@ interface MediaPlayer : AutoCloseable {
      * Seeks the current media to the given position.
      */
     fun seekTo(positionMs: Long)
+
+    /**
+     * Enables background playback so audio/video continues when the app is in the background.
+     */
+    fun enableBackgroundPlayback()
+
+    /**
+     * Disables background playback. The player will pause when the app goes to the background.
+     */
+    fun disableBackgroundPlayback()
 
     /**
      * Releases any resources associated with this player.

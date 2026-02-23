@@ -8,6 +8,7 @@
 
 package io.element.android.libraries.mediaplayer.impl
 
+import android.content.Context
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -16,6 +17,7 @@ import dev.zacsweers.metro.SingleIn
 import io.element.android.libraries.audio.api.AudioFocus
 import io.element.android.libraries.audio.api.AudioFocusRequester
 import io.element.android.libraries.di.RoomScope
+import io.element.android.libraries.di.annotations.ApplicationContext
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.mediaplayer.api.MediaPlayer
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +43,8 @@ class DefaultMediaPlayer(
     @SessionCoroutineScope
     private val sessionCoroutineScope: CoroutineScope,
     private val audioFocus: AudioFocus,
+    @ApplicationContext
+    private val context: Context,
 ) : MediaPlayer {
     private val listener = object : SimplePlayer.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -53,9 +57,15 @@ class DefaultMediaPlayer(
             }
             if (isPlaying) {
                 job = sessionCoroutineScope.launch { updateCurrentPosition() }
+                if (_backgroundPlaybackEnabled) {
+                    notifyServiceOfStateChange()
+                }
             } else {
                 audioFocus.releaseAudioFocus()
                 job?.cancel()
+                if (_backgroundPlaybackEnabled) {
+                    notifyServiceOfStateChange()
+                }
             }
         }
 
@@ -78,7 +88,20 @@ class DefaultMediaPlayer(
                     duration = duration,
                 )
             }
+            if (playbackState == Player.STATE_ENDED && _backgroundPlaybackEnabled) {
+                disableBackgroundPlayback()
+            }
         }
+    }
+
+    private val serviceCallback = object : MediaPlaybackService.Callback {
+        override fun onPlay() = play()
+        override fun onPause() = pause()
+        override fun onStop() {
+            pause()
+            disableBackgroundPlayback()
+        }
+        override fun onSeekTo(positionMs: Long) = seekTo(positionMs)
     }
 
     init {
@@ -86,6 +109,8 @@ class DefaultMediaPlayer(
     }
 
     private var job: Job? = null
+    private var _backgroundPlaybackEnabled = false
+    private var currentTitle: String? = null
 
     private val _state = MutableStateFlow(
         MediaPlayer.State(
@@ -100,14 +125,18 @@ class DefaultMediaPlayer(
 
     override val state: StateFlow<MediaPlayer.State> = _state.asStateFlow()
 
+    override val isBackgroundPlaybackEnabled: Boolean
+        get() = _backgroundPlaybackEnabled
+
     @OptIn(FlowPreview::class)
     override suspend fun setMedia(
         uri: String,
         mediaId: String,
         mimeType: String,
         startPositionMs: Long,
+        title: String?,
     ): MediaPlayer.State {
-        // Must pause here otherwise if the player was playing it would keep on playing the new media item.
+        currentTitle = title
         player.pause()
         player.clearMediaItems()
         player.setMediaItem(
@@ -119,7 +148,6 @@ class DefaultMediaPlayer(
             startPositionMs,
         )
         player.prepare()
-        // Will throw TimeoutCancellationException if the player is not ready after 1 second.
         return state.timeout(1.seconds).first { it.isReady && it.mediaId == mediaId }
     }
 
@@ -133,13 +161,6 @@ class DefaultMediaPlayer(
             },
         )
         if (player.playbackState == Player.STATE_ENDED) {
-            // There's a bug with some ogg files that somehow report to
-            // have no duration.
-            // With such files, once playback has ended once, calling
-            // player.seekTo(0) and then player.play() results in the
-            // player starting and stopping playing immediately effectively
-            // playing no sound.
-            // This is a workaround which will reload the media file.
             player.getCurrentMediaItem()?.let {
                 player.setMediaItem(it, 0)
                 player.prepare()
@@ -157,10 +178,40 @@ class DefaultMediaPlayer(
         _state.update {
             it.copy(currentPosition = player.currentPosition)
         }
+        if (_backgroundPlaybackEnabled) {
+            notifyServiceOfStateChange()
+        }
+    }
+
+    override fun enableBackgroundPlayback() {
+        if (_backgroundPlaybackEnabled) return
+        _backgroundPlaybackEnabled = true
+        MediaPlaybackService.setCallback(serviceCallback)
+        MediaPlaybackService.start(context, currentTitle)
+        notifyServiceOfStateChange()
+    }
+
+    override fun disableBackgroundPlayback() {
+        if (!_backgroundPlaybackEnabled) return
+        _backgroundPlaybackEnabled = false
+        MediaPlaybackService.setCallback(null)
+        MediaPlaybackService.stop(context)
     }
 
     override fun close() {
+        disableBackgroundPlayback()
         player.release()
+    }
+
+    private fun notifyServiceOfStateChange() {
+        val s = _state.value
+        MediaPlaybackService.updateState(
+            context = context,
+            isPlaying = s.isPlaying,
+            position = s.currentPosition,
+            duration = s.duration ?: 0L,
+            title = currentTitle,
+        )
     }
 
     private suspend fun updateCurrentPosition() {

@@ -44,25 +44,25 @@ Based on codebase analysis and Matrix protocol capabilities, **8 out of 12 Andro
 
 ### 2. ✅ Background Media Playback
 
-**Status:** ❌ Missing - Can be implemented client-side only
+**Status:** ✅ Implemented
 
-**Current State:**
-- Media pauses when leaving app/room
-- No MediaSession integration
-- No foreground service for playback
+**Implementation:**
+- Created `MediaPlaybackService` foreground service with `foregroundServiceType="mediaPlayback"`
+- Integrated `MediaSessionCompat` for lock screen / notification media controls (play/pause/stop/seek)
+- Media-style notification with playback controls
+- Audio continues playing when the app goes to background (ON_PAUSE no longer pauses if background playback is active)
+- Voice messages also support background playback via `enableBackgroundPlayback()`/`disableBackgroundPlayback()`
+- Service auto-stops when playback ends or the media viewer is dismissed
 
-**Implementation Approach:**
-- **Client-side only** ✅
-- Use Android MediaSession API
-- Create foreground service for background playback
-- Store playback state in local preferences
-- Resume playback when app returns to foreground
-
-**Files to Create/Modify:**
+**Files Created/Modified:**
 - New: `libraries/mediaplayer/impl/src/main/kotlin/io/element/android/libraries/mediaplayer/impl/MediaPlaybackService.kt`
-- Modify: `libraries/mediaplayer/api/src/main/kotlin/io/element/android/libraries/mediaplayer/api/MediaPlayer.kt`
-- Modify: `libraries/mediaviewer/impl/src/main/kotlin/io/element/android/libraries/mediaviewer/impl/local/audio/MediaAudioView.kt`
-- Modify: `libraries/mediaviewer/impl/src/main/kotlin/io/element/android/libraries/mediaviewer/impl/local/video/MediaVideoView.kt`
+- New: `libraries/mediaplayer/impl/src/main/AndroidManifest.xml`
+- New: `libraries/mediaviewer/impl/src/main/kotlin/io/element/android/libraries/mediaviewer/impl/local/MediaPlaybackServiceHelper.kt`
+- Modified: `libraries/mediaplayer/api/src/main/kotlin/io/element/android/libraries/mediaplayer/api/MediaPlayer.kt`
+- Modified: `libraries/mediaplayer/impl/src/main/kotlin/io/element/android/libraries/mediaplayer/impl/DefaultMediaPlayer.kt`
+- Modified: `libraries/mediaviewer/impl/src/main/kotlin/io/element/android/libraries/mediaviewer/impl/local/audio/MediaAudioView.kt`
+- Modified: `libraries/mediaviewer/impl/src/main/kotlin/io/element/android/libraries/mediaviewer/impl/local/video/MediaVideoView.kt`
+- Modified: `libraries/voiceplayer/impl/src/main/kotlin/io/element/android/libraries/voiceplayer/impl/VoiceMessagePlayer.kt`
 
 **Effort:** High
 
@@ -302,7 +302,7 @@ Based on codebase analysis and Matrix protocol capabilities, **8 out of 12 Andro
 | # | Feature | Client-Only? | Effort | Notes |
 |---|---------|--------------|--------|-------|
 | 1 | Media Upload Progress (%) | ✅ Done | Low | SDK sends MediaWithProgress; now displayed as % in timeline |
-| 2 | Background Media Playback | ⚠️ Not done | High | Needs MediaSession, foreground service, notification controls |
+| 2 | Background Media Playback | ✅ Done | High | MediaSession + foreground service + notification controls |
 | 3 | Multi-Message Forwarding | ✅ Done | Medium | Selection mode + batch forward via ForwardEntryPoint |
 | 4 | Push Default Enabled | ✅ Done | Low | Already enabled by default |
 | 5 | Chat Backgrounds | ✅ Done | Medium | Gradient/Emoji backgrounds via Developer Settings |
@@ -328,9 +328,8 @@ Based on codebase analysis and Matrix protocol capabilities, **8 out of 12 Andro
 8. **Voice/Video Calls** - Already implemented (Element Call)
 9. **Poll Responses in Channels** - Already implemented
 
-### ❌ Not Done (Need Server or High Effort)
-10. **Background Media Playback** (High effort: MediaSession, foreground service, notification)
-11. **User Status Display** (Needs server: Matrix Presence API or account_data)
+### ❌ Not Done (Need Server)
+10. **User Status Display** (Needs server: Matrix Presence API or account_data)
 
 ---
 

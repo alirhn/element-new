@@ -50,6 +50,7 @@ import io.element.android.libraries.designsystem.utils.KeepScreenOn
 import io.element.android.libraries.designsystem.utils.OnLifecycleEvent
 import io.element.android.libraries.mediaviewer.api.local.LocalMedia
 import io.element.android.libraries.mediaviewer.impl.local.LocalMediaViewState
+import io.element.android.libraries.mediaviewer.impl.local.MediaPlaybackServiceHelper
 import io.element.android.libraries.mediaviewer.impl.local.PlayableState
 import io.element.android.libraries.mediaviewer.impl.local.player.MediaPlayerControllerState
 import io.element.android.libraries.mediaviewer.impl.local.player.MediaPlayerControllerView
@@ -273,7 +274,8 @@ private fun ExoPlayerLifecycleHelper(
     playerListener: Player.Listener,
     mediaPlayerControllerState: MediaPlayerControllerState,
 ) {
-    // Prepare and release the exoPlayer with the composable lifecycle
+    val bgContext = LocalContext.current
+
     DisposableEffect(Unit) {
         Timber.d("ExoPlayerMediaVideoView DisposableEffect: initializing exoPlayer")
         exoPlayer.addListener(playerListener)
@@ -281,6 +283,7 @@ private fun ExoPlayerLifecycleHelper(
 
         onDispose {
             Timber.d("Disposing exoplayer")
+            MediaPlaybackServiceHelper.stopService(bgContext)
             if (!exoPlayer.isReleased) {
                 exoPlayer.removeListener(playerListener)
                 exoPlayer.release()
@@ -288,22 +291,29 @@ private fun ExoPlayerLifecycleHelper(
         }
     }
 
+    LaunchedEffect(mediaPlayerControllerState.isPlaying) {
+        if (mediaPlayerControllerState.isPlaying) {
+            MediaPlaybackServiceHelper.startService(bgContext, "Video playback")
+        } else {
+            MediaPlaybackServiceHelper.stopService(bgContext)
+        }
+    }
+
     var needsAutoPlay by remember { mutableStateOf(autoplay) }
     LaunchedEffect(needsAutoPlay, isDisplayed, mediaPlayerControllerState.isReady) {
         val isReadyAndNotPlaying = mediaPlayerControllerState.isReady && !mediaPlayerControllerState.isPlaying
         if (needsAutoPlay && isDisplayed && isReadyAndNotPlaying) {
-            // When displayed, start autoplaying
             exoPlayer.play()
             needsAutoPlay = false
         } else if (!isDisplayed && mediaPlayerControllerState.isPlaying) {
-            // If not displayed, make sure to pause the video
-            exoPlayer.pause()
+            if (!MediaPlaybackServiceHelper.isActive) {
+                exoPlayer.pause()
+            }
         }
     }
 
-    // Pause playback when lifecycle is paused
     OnLifecycleEvent { _, event ->
-        if (event == Lifecycle.Event.ON_PAUSE && exoPlayer.isPlaying) {
+        if (event == Lifecycle.Event.ON_PAUSE && exoPlayer.isPlaying && !MediaPlaybackServiceHelper.isActive) {
             exoPlayer.pause()
         }
     }

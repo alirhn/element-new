@@ -143,7 +143,9 @@ class MessagesNode(
                 analyticsService.finishLongRunningTransaction(LoadMessagesUi)
             },
             onDestroy = {
-                mediaPlayer.close()
+                if (!mediaPlayer.isBackgroundPlaybackEnabled) {
+                    mediaPlayer.close()
+                }
             }
         )
     }

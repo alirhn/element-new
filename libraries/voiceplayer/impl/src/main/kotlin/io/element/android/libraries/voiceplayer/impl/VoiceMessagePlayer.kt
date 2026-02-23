@@ -154,6 +154,9 @@ class DefaultVoiceMessagePlayer(
 
     override val state: Flow<VoiceMessagePlayer.State> = combine(mediaPlayer.state, internalState) { mediaPlayerState, internalState ->
         if (mediaPlayerState.isMyTrack) {
+            if (mediaPlayerState.isEnded && mediaPlayer.isBackgroundPlaybackEnabled) {
+                mediaPlayer.disableBackgroundPlayback()
+            }
             this.internalState.update {
                 it.copy(
                     isReady = mediaPlayerState.isReady,
@@ -197,6 +200,7 @@ class DefaultVoiceMessagePlayer(
 
     override fun play() {
         if (inControl()) {
+            mediaPlayer.enableBackgroundPlayback()
             mediaPlayer.play()
         }
     }
@@ -204,6 +208,7 @@ class DefaultVoiceMessagePlayer(
     override fun pause() {
         if (inControl()) {
             mediaPlayer.pause()
+            mediaPlayer.disableBackgroundPlayback()
         }
     }
 

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -65,6 +66,7 @@ import io.element.android.libraries.mediaviewer.api.MediaInfo
 import io.element.android.libraries.mediaviewer.api.helper.formatFileExtensionAndSize
 import io.element.android.libraries.mediaviewer.api.local.LocalMedia
 import io.element.android.libraries.mediaviewer.impl.local.LocalMediaViewState
+import io.element.android.libraries.mediaviewer.impl.local.MediaPlaybackServiceHelper
 import io.element.android.libraries.mediaviewer.impl.local.PlayableState
 import io.element.android.libraries.mediaviewer.impl.local.player.MediaPlayerControllerState
 import io.element.android.libraries.mediaviewer.impl.local.player.MediaPlayerControllerView
@@ -184,8 +186,7 @@ private fun ExoPlayerMediaAudioView(
         }
     }
     LaunchedEffect(isDisplayed) {
-        // If not displayed, make sure to pause the audio
-        if (!isDisplayed) {
+        if (!isDisplayed && !MediaPlaybackServiceHelper.isActive) {
             exoPlayer.pause()
         }
     }
@@ -307,11 +308,30 @@ private fun ExoPlayerMediaAudioView(
         )
     }
 
+    val bgContext = LocalContext.current
+    DisposableEffect(Unit) {
+        onDispose {
+            MediaPlaybackServiceHelper.stopService(bgContext)
+        }
+    }
+
+    LaunchedEffect(mediaPlayerControllerState.isPlaying) {
+        if (mediaPlayerControllerState.isPlaying) {
+            MediaPlaybackServiceHelper.startService(bgContext, info?.filename)
+        } else {
+            MediaPlaybackServiceHelper.stopService(bgContext)
+        }
+    }
+
     OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_CREATE -> exoPlayer.addListener(playerListener)
             Lifecycle.Event.ON_RESUME -> exoPlayer.prepare()
-            Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
+            Lifecycle.Event.ON_PAUSE -> {
+                if (!MediaPlaybackServiceHelper.isActive) {
+                    exoPlayer.pause()
+                }
+            }
             Lifecycle.Event.ON_DESTROY -> {
                 exoPlayer.release()
                 exoPlayer.removeListener(playerListener)

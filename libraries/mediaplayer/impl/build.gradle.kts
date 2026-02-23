@@ -21,11 +21,16 @@ setupDependencyInjection()
 dependencies {
     api(projects.libraries.mediaplayer.api)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media)
 
     implementation(projects.libraries.audio.api)
     implementation(projects.libraries.core)
     implementation(projects.libraries.di)
+    implementation(projects.libraries.push.api)
+    implementation(projects.libraries.designsystem)
 
+    implementation(libs.androidx.core)
     implementation(libs.coroutines.core)
 
     testCommonDependencies(libs)

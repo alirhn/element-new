@@ -12,6 +12,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import androidx.test.core.app.ApplicationProvider
 import io.element.android.libraries.audio.api.AudioFocus
 import io.element.android.libraries.audio.api.AudioFocusRequester
 import io.element.android.libraries.mediaplayer.api.MediaPlayer
@@ -23,7 +24,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class DefaultMediaPlayerTest {
     private val aMediaId = "mediaId"
     private val aMediaItem = MediaItem.Builder().setMediaId(aMediaId).build()
@@ -426,5 +430,6 @@ class DefaultMediaPlayerTest {
         player = simplePlayer,
         sessionCoroutineScope = backgroundScope,
         audioFocus = audioFocus,
+        context = ApplicationProvider.getApplicationContext(),
     )
 }
