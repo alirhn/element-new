@@ -20,6 +20,9 @@ sealed interface MessagesEvents {
     data class OnUserClicked(val user: MatrixUser) : MessagesEvents
     data object Dismiss : MessagesEvents
     data object MarkAsFullyReadAndExit : MessagesEvents
+    data class ToggleMessageSelection(val event: TimelineItem.Event) : MessagesEvents
+    data object ExitSelectionMode : MessagesEvents
+    data object ForwardSelectedMessages : MessagesEvents
 }
 
 enum class InviteDialogAction {

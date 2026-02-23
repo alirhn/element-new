@@ -121,6 +121,7 @@ class MessagesNode(
         fun handlePermalinkClick(data: PermalinkData)
         fun navigateToEventDebugInfo(eventId: EventId?, debugInfo: TimelineItemDebugInfo)
         fun forwardEvent(eventId: EventId)
+        fun forwardEvents(eventIds: List<EventId>)
         fun navigateToReportMessage(eventId: EventId, senderId: UserId)
         fun navigateToSendLocation()
         fun navigateToCreatePoll()
@@ -199,6 +200,11 @@ class MessagesNode(
 
     override fun forwardEvent(eventId: EventId) {
         callback.forwardEvent(eventId)
+    }
+
+    override fun forwardEvents(eventIds: List<EventId>) {
+        if (eventIds.isEmpty()) return
+        callback.forwardEvents(eventIds)
     }
 
     override fun navigateToReportMessage(eventId: EventId, senderId: UserId) {

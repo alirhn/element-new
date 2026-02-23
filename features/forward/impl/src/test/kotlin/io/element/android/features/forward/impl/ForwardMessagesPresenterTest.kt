@@ -99,5 +99,6 @@ fun TestScope.createForwardMessagesPresenter(
 ) = ForwardMessagesPresenter(
     eventId = eventId.value,
     timelineProvider = LiveTimelineProvider(fakeRoom),
+    eventIds = listOf(eventId.value),
     sessionCoroutineScope = this,
 )

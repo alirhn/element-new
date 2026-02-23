@@ -201,6 +201,12 @@ class ThreadedMessagesNode(
         callback.handleForwardEventClick(eventId)
     }
 
+    override fun forwardEvents(eventIds: List<EventId>) {
+        if (eventIds.isNotEmpty()) {
+            callback.handleForwardEventClick(eventIds.first())
+        }
+    }
+
     override fun navigateToReportMessage(eventId: EventId, senderId: UserId) {
         callback.navigateToReportMessage(eventId, senderId)
     }

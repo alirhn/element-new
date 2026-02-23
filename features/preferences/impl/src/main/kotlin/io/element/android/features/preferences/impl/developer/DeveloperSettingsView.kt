@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.preferences.impl.R
 import io.element.android.features.preferences.impl.developer.tracing.LogLevelItem
+import io.element.android.features.preferences.impl.developer.ChatBackgroundStyleItem
 import io.element.android.features.rageshake.api.preferences.RageshakePreferencesView
 import io.element.android.libraries.designsystem.components.ProgressDialog
 import io.element.android.libraries.designsystem.components.list.ListItemContent
@@ -78,6 +79,16 @@ fun DeveloperSettingsView(
         NotificationCategory(onPushHistoryClick)
         ElementCallCategory(state = state)
 
+        PreferenceCategory(title = "Chat") {
+            PreferenceDropdown(
+                title = "Chat background",
+                selectedOption = ChatBackgroundStyleItem.fromStorageKey(state.chatBackgroundStyle),
+                options = ChatBackgroundStyleItem.entries.toImmutableList(),
+                onSelectOption = { option ->
+                    state.eventSink(DeveloperSettingsEvents.SetChatBackgroundStyle(option.storageKey))
+                }
+            )
+        }
         PreferenceCategory(title = "Rust SDK") {
             PreferenceDropdown(
                 title = "Tracing log level",

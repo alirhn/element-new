@@ -30,20 +30,22 @@ import timber.log.Timber
 class ForwardMessagesPresenter(
     @Assisted eventId: String,
     @Assisted private val timelineProvider: TimelineProvider,
+    @Assisted private val eventIds: List<String>,
     @SessionCoroutineScope
     private val sessionCoroutineScope: CoroutineScope,
 ) : Presenter<ForwardMessagesState> {
     private val eventId: EventId = EventId(eventId)
+    private val allEventIds: List<EventId> = eventIds.ifEmpty { listOf(eventId) }.map { EventId(it) }
 
     @AssistedFactory
     fun interface Factory {
-        fun create(eventId: String, timelineProvider: TimelineProvider): ForwardMessagesPresenter
+        fun create(eventId: String, timelineProvider: TimelineProvider, eventIds: List<String>): ForwardMessagesPresenter
     }
 
     private val forwardingActionState: MutableState<AsyncAction<List<RoomId>>> = mutableStateOf(AsyncAction.Uninitialized)
 
     fun onRoomSelected(roomIds: List<RoomId>) {
-        sessionCoroutineScope.forwardEvent(eventId, roomIds)
+        sessionCoroutineScope.forwardEvents(allEventIds, roomIds)
     }
 
     @Composable
@@ -60,16 +62,19 @@ class ForwardMessagesPresenter(
         )
     }
 
-    private fun CoroutineScope.forwardEvent(
-        eventId: EventId,
+    private fun CoroutineScope.forwardEvents(
+        eventIds: List<EventId>,
         roomIds: List<RoomId>,
     ) = launch {
         suspend {
-            timelineProvider.getActiveTimeline().forwardEvent(eventId, roomIds)
-                .onFailure {
-                    Timber.e(it, "Error while forwarding event")
-                }
-                .getOrThrow()
+            val timeline = timelineProvider.getActiveTimeline()
+            for (id in eventIds) {
+                timeline.forwardEvent(id, roomIds)
+                    .onFailure {
+                        Timber.e(it, "Error while forwarding event $id")
+                    }
+                    .getOrThrow()
+            }
             roomIds
         }.runCatchingUpdatingState(forwardingActionState)
     }

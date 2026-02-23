@@ -283,7 +283,8 @@ class TimelinePresenter(
 
         val typingNotificationState = typingNotificationPresenter.present()
         val roomCallState = roomCallStatePresenter.present()
-        val timelineRoomInfo by remember(typingNotificationState, roomCallState, roomInfo) {
+        val chatBackgroundStyle by sessionPreferencesStore.getChatBackgroundStyle().collectAsState("default")
+        val timelineRoomInfo by remember(typingNotificationState, roomCallState, roomInfo, chatBackgroundStyle) {
             derivedStateOf {
                 TimelineRoomInfo(
                     name = roomInfo.name,
@@ -294,6 +295,8 @@ class TimelinePresenter(
                     pinnedEventIds = roomInfo.pinnedEventIds,
                     typingNotificationState = typingNotificationState,
                     predecessorRoom = room.predecessorRoom(),
+                    numUnreadMessages = roomInfo.numUnreadMessages,
+                    chatBackgroundStyle = chatBackgroundStyle,
                 )
             }
         }

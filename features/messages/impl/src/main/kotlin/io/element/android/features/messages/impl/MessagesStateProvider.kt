@@ -141,6 +141,7 @@ fun aMessagesState(
     dmUserVerificationState = dmUserVerificationState,
     roomMemberModerationState = roomMemberModerationState,
     successorRoom = successorRoom,
+    selectedEventIds = persistentSetOf(),
     eventSink = eventSink,
 )
 

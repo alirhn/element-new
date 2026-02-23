@@ -30,6 +30,7 @@ import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.matrix.test.A_SESSION_ID
 import io.element.android.libraries.matrix.test.core.aBuildMeta
 import io.element.android.libraries.preferences.test.InMemoryAppPreferencesStore
+import io.element.android.libraries.preferences.test.InMemorySessionPreferencesStore
 import io.element.android.tests.testutils.WarmUpRule
 import io.element.android.tests.testutils.lambda.lambdaRecorder
 import io.element.android.tests.testutils.lambda.value
@@ -228,6 +229,7 @@ class DeveloperSettingsPresenterTest {
         cacheSizeUseCase: FakeComputeCacheSizeUseCase = FakeComputeCacheSizeUseCase(),
         clearCacheUseCase: FakeClearCacheUseCase = FakeClearCacheUseCase(),
         preferencesStore: InMemoryAppPreferencesStore = InMemoryAppPreferencesStore(),
+        sessionPreferencesStore: InMemorySessionPreferencesStore = InMemorySessionPreferencesStore(),
         buildMeta: BuildMeta = aBuildMeta(),
         enterpriseService: EnterpriseService = FakeEnterpriseService(),
     ): DeveloperSettingsPresenter {
@@ -238,6 +240,7 @@ class DeveloperSettingsPresenterTest {
             clearCacheUseCase = clearCacheUseCase,
             rageshakePresenter = { aRageshakePreferencesState() },
             appPreferencesStore = preferencesStore,
+            sessionPreferencesStore = sessionPreferencesStore,
             buildMeta = buildMeta,
             enterpriseService = enterpriseService,
         )

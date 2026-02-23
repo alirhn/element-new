@@ -37,7 +37,7 @@ class DefaultForwardEntryPointTest {
             ForwardMessagesNode(
                 buildContext = buildContext,
                 plugins = plugins,
-                presenterFactory = { _, _ -> createForwardMessagesPresenter() },
+                presenterFactory = { _, _, _ -> createForwardMessagesPresenter() },
                 roomSelectEntryPoint = FakeRoomSelectEntryPoint(),
             )
         }
@@ -59,6 +59,7 @@ class DefaultForwardEntryPointTest {
             ForwardMessagesNode.Inputs(
                 eventId = params.eventId,
                 timelineProvider = params.timelineProvider,
+                eventIds = params.eventIds,
             )
         )
         assertThat(result.plugins).contains(callback)

@@ -81,6 +81,7 @@ class UserPushStoreDataStore(
         }
     }
 
+    /** Push notifications are enabled by default (orTrue when key is absent). */
     override fun getNotificationEnabledForDevice(): Flow<Boolean> {
         return store.data.map { it[notificationEnabled].orTrue() }
     }

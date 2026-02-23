@@ -36,4 +36,5 @@ enum class TimelineItemAction(
     EndPoll(CommonStrings.action_end_poll, CompoundDrawables.ic_compound_polls_end),
     Pin(CommonStrings.action_pin, CompoundDrawables.ic_compound_pin),
     Unpin(CommonStrings.action_unpin, CompoundDrawables.ic_compound_unpin),
+    Select(CommonStrings.action_forward, CompoundDrawables.ic_compound_forward),
 }

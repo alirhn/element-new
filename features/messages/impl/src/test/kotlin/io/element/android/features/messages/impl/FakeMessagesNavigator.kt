@@ -35,6 +35,12 @@ class FakeMessagesNavigator(
         onForwardEventClickLambda(eventId)
     }
 
+    override fun forwardEvents(eventIds: List<EventId>) {
+        if (eventIds.isNotEmpty()) {
+            onForwardEventClickLambda(eventIds.first())
+        }
+    }
+
     override fun navigateToReportMessage(eventId: EventId, senderId: UserId) {
         onReportContentClickLambda(eventId, senderId)
     }

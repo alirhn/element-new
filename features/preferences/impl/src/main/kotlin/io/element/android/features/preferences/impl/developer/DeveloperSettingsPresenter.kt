@@ -42,6 +42,7 @@ import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.featureflag.ui.model.FeatureUiModel
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
+import io.element.android.libraries.preferences.api.store.SessionPreferencesStore
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -59,6 +60,7 @@ class DeveloperSettingsPresenter(
     private val clearCacheUseCase: ClearCacheUseCase,
     private val rageshakePresenter: Presenter<RageshakePreferencesState>,
     private val appPreferencesStore: AppPreferencesStore,
+    private val sessionPreferencesStore: SessionPreferencesStore,
     private val buildMeta: BuildMeta,
     private val enterpriseService: EnterpriseService,
 ) : Presenter<DeveloperSettingsState> {
@@ -77,6 +79,7 @@ class DeveloperSettingsPresenter(
         var showColorPicker by remember {
             mutableStateOf(false)
         }
+        val chatBackgroundStyle by sessionPreferencesStore.getChatBackgroundStyle().collectAsState("default")
         val customElementCallBaseUrl by remember {
             appPreferencesStore
                 .getCustomElementCallBaseUrlFlow()
@@ -151,6 +154,9 @@ class DeveloperSettingsPresenter(
                 is DeveloperSettingsEvents.SetShowColorPicker -> {
                     showColorPicker = event.show
                 }
+                is DeveloperSettingsEvents.SetChatBackgroundStyle -> coroutineScope.launch {
+                    sessionPreferencesStore.setChatBackgroundStyle(event.style)
+                }
             }
         }
 
@@ -167,6 +173,7 @@ class DeveloperSettingsPresenter(
             tracingLogPacks = tracingLogPacks,
             isEnterpriseBuild = enterpriseService.isEnterpriseBuild,
             showColorPicker = showColorPicker,
+            chatBackgroundStyle = chatBackgroundStyle,
             eventSink = ::handleEvent,
         )
     }

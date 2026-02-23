@@ -9,6 +9,7 @@
 package io.element.android.features.messages.impl.timeline
 
 import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -102,6 +103,7 @@ fun TimelineView(
     onReadReceiptClick: (TimelineItem.Event) -> Unit,
     onJoinCallClick: () -> Unit,
     modifier: Modifier = Modifier,
+    selectedEventIds: Set<EventId> = emptySet(),
     lazyListState: LazyListState = rememberLazyListState(),
     forceJumpToBottomVisibility: Boolean = false,
     nestedScrollConnection: NestedScrollConnection = rememberNestedScrollInteropConnection(),
@@ -162,7 +164,14 @@ fun TimelineView(
                     contentType = { timelineItem -> timelineItem.contentType() },
                     key = { timelineItem -> timelineItem.identifier() },
                 ) { timelineItem ->
+                    val isSelected = (timelineItem as? TimelineItem.Event)?.eventId?.let { it in selectedEventIds } == true
+                    val selectionModifier = if (isSelected) {
+                        Modifier.background(ElementTheme.colors.bgActionPrimaryRest.copy(alpha = 0.12f))
+                    } else {
+                        Modifier
+                    }
                     TimelineItemRow(
+                        modifier = selectionModifier,
                         timelineItem = timelineItem,
                         timelineMode = state.timelineMode,
                         timelineRoomInfo = state.timelineRoomInfo,
@@ -205,6 +214,7 @@ fun TimelineView(
                 newEventState = state.newEventState,
                 isLive = state.isLive,
                 focusRequestState = state.focusRequestState,
+                numUnreadMessages = state.timelineRoomInfo.numUnreadMessages,
                 onScrollFinishAt = ::onScrollFinishAt,
                 onJumpToLive = ::onJumpToLive,
                 onFocusEventRender = ::onFocusEventRender,
@@ -273,6 +283,7 @@ private fun BoxScope.TimelineScrollHelper(
     isLive: Boolean,
     forceJumpToBottomVisibility: Boolean,
     focusRequestState: FocusRequestState,
+    numUnreadMessages: Long,
     onScrollFinishAt: (Int) -> Unit,
     onJumpToLive: () -> Unit,
     onFocusEventRender: () -> Unit,
@@ -285,6 +296,7 @@ private fun BoxScope.TimelineScrollHelper(
         }
     }
     var jumpToLiveHandled by remember { mutableStateOf(true) }
+    var hasScrolledToUnreadOnEntry by remember { mutableStateOf(false) }
 
     /**
      * @param force If true, scroll to the bottom even if the user is already seeing the most recent item.
@@ -307,6 +319,14 @@ private fun BoxScope.TimelineScrollHelper(
         } else {
             jumpToLiveHandled = false
             onJumpToLive()
+        }
+    }
+
+    // Auto-scroll to bottom when entering a room with unread messages (instruction requirement)
+    LaunchedEffect(numUnreadMessages, hasAnyEvent) {
+        if (!hasScrolledToUnreadOnEntry && numUnreadMessages > 0L && hasAnyEvent && isLive) {
+            scrollToBottom(force = true)
+            hasScrolledToUnreadOnEntry = true
         }
     }
 

@@ -25,6 +25,7 @@ interface ForwardEntryPoint : FeatureEntryPoint {
     data class Params(
         val eventId: EventId,
         val timelineProvider: TimelineProvider,
+        val eventIds: List<EventId> = listOf(eventId),
     ) : NodeInputs
 
     fun createNode(

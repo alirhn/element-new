@@ -254,6 +254,8 @@ internal fun aTimelineRoomInfo(
     pinnedEventIds: List<EventId> = emptyList(),
     typingNotificationState: TypingNotificationState = aTypingNotificationState(),
     predecessorRoom: PredecessorRoom? = null,
+    numUnreadMessages: Long = 0L,
+    chatBackgroundStyle: String = "default",
 ) = TimelineRoomInfo(
     isDm = isDm,
     name = name,
@@ -263,4 +265,6 @@ internal fun aTimelineRoomInfo(
     pinnedEventIds = pinnedEventIds.toImmutableList(),
     typingNotificationState = typingNotificationState,
     predecessorRoom = predecessorRoom,
+    numUnreadMessages = numUnreadMessages,
+    chatBackgroundStyle = chatBackgroundStyle,
 )

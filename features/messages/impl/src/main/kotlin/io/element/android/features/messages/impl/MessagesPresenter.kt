@@ -71,6 +71,8 @@ import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.core.toThreadId
+import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toImmutableSet
 import io.element.android.libraries.matrix.api.encryption.EncryptionService
 import io.element.android.libraries.matrix.api.encryption.identity.IdentityState
 import io.element.android.libraries.matrix.api.permalink.PermalinkParser
@@ -203,6 +205,8 @@ class MessagesPresenter(
 
         val snackbarMessage by snackbarDispatcher.collectSnackbarMessageAsState()
 
+        var selectedEventIds by remember { mutableStateOf(persistentSetOf<io.element.android.libraries.matrix.api.core.EventId>()) }
+
         var dmUserVerificationState by remember { mutableStateOf<IdentityState?>(null) }
 
         val membersState by room.membersStateFlow.collectAsState()
@@ -225,14 +229,20 @@ class MessagesPresenter(
         fun handleEvent(event: MessagesEvents) {
             when (event) {
                 is MessagesEvents.HandleAction -> {
-                    localCoroutineScope.handleTimelineAction(
-                        action = event.action,
-                        targetEvent = event.event,
-                        composerState = composerState,
-                        enableTextFormatting = composerState.showTextFormatting,
-                        timelineState = timelineState,
-                        timelineProtectionState = timelineProtectionState,
-                    )
+                    if (event.action == TimelineItemAction.Select) {
+                        event.event.eventId?.let { eventId ->
+                            selectedEventIds = selectedEventIds.add(eventId)
+                        }
+                    } else {
+                        localCoroutineScope.handleTimelineAction(
+                            action = event.action,
+                            targetEvent = event.event,
+                            composerState = composerState,
+                            enableTextFormatting = composerState.showTextFormatting,
+                            timelineState = timelineState,
+                            timelineProtectionState = timelineProtectionState,
+                        )
+                    }
                 }
                 is MessagesEvents.ToggleReaction -> {
                     localCoroutineScope.toggleReaction(event.emoji, event.eventOrTransactionId)
@@ -247,6 +257,22 @@ class MessagesPresenter(
                 is MessagesEvents.Dismiss -> actionListState.eventSink(ActionListEvents.Clear)
                 is MessagesEvents.OnUserClicked -> {
                     roomMemberModerationState.eventSink(RoomMemberModerationEvents.ShowActionsForUser(event.user))
+                }
+                is MessagesEvents.ToggleMessageSelection -> {
+                    val eventId = event.event.eventId ?: return
+                    selectedEventIds = if (selectedEventIds.contains(eventId)) {
+                        selectedEventIds.remove(eventId)
+                    } else {
+                        selectedEventIds.add(eventId)
+                    }
+                }
+                is MessagesEvents.ExitSelectionMode -> {
+                    selectedEventIds = persistentSetOf()
+                }
+                is MessagesEvents.ForwardSelectedMessages -> {
+                    val ids = selectedEventIds.toList()
+                    selectedEventIds = persistentSetOf()
+                    navigator.forwardEvents(ids)
                 }
                 is MessagesEvents.MarkAsFullyReadAndExit -> coroutineScope.launch {
                     if (!markingAsReadAndExiting.getAndSet(true)) {
@@ -293,6 +319,7 @@ class MessagesPresenter(
             dmUserVerificationState = dmUserVerificationState,
             roomMemberModerationState = roomMemberModerationState,
             successorRoom = roomInfo.successorRoom,
+            selectedEventIds = selectedEventIds.toImmutableSet(),
             eventSink = ::handleEvent,
         )
     }
@@ -364,6 +391,7 @@ class MessagesPresenter(
             }
             TimelineItemAction.ViewSource -> handleShowDebugInfoAction(targetEvent)
             TimelineItemAction.Forward -> handleForwardAction(targetEvent)
+            TimelineItemAction.Select -> Unit
             TimelineItemAction.ReportContent -> handleReportAction(targetEvent)
             TimelineItemAction.EndPoll -> handleEndPollAction(targetEvent, timelineState)
             TimelineItemAction.Pin -> handlePinAction(targetEvent)

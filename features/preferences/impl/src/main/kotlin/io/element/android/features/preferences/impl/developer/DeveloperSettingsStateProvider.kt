@@ -42,6 +42,7 @@ fun aDeveloperSettingsState(
     traceLogPacks: List<TraceLogPack> = emptyList(),
     isEnterpriseBuild: Boolean = false,
     showColorPicker: Boolean = false,
+    chatBackgroundStyle: String = "default",
     eventSink: (DeveloperSettingsEvents) -> Unit = {},
 ) = DeveloperSettingsState(
     features = aFeatureUiModelList(),
@@ -53,6 +54,7 @@ fun aDeveloperSettingsState(
     tracingLogPacks = traceLogPacks.toImmutableList(),
     isEnterpriseBuild = isEnterpriseBuild,
     showColorPicker = showColorPicker,
+    chatBackgroundStyle = chatBackgroundStyle,
     eventSink = eventSink,
 )
 

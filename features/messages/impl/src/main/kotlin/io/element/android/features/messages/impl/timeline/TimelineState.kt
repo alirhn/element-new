@@ -81,4 +81,8 @@ data class TimelineRoomInfo(
     val pinnedEventIds: ImmutableList<EventId>,
     val typingNotificationState: TypingNotificationState,
     val predecessorRoom: PredecessorRoom?,
+    /** Number of unread messages; used to auto-scroll to bottom on room entry when > 0. */
+    val numUnreadMessages: Long = 0L,
+    /** Chat background style: "default", "gradient", or "emoji". */
+    val chatBackgroundStyle: String = "default",
 )

@@ -457,6 +457,28 @@ class TimelinePresenterTest {
     }
 
     @Test
+    fun `present - PollAnswerSelected event still works when user cannot send regular messages`() = runTest {
+        val sendPollResponseAction = FakeSendPollResponseAction()
+        val room = FakeJoinedRoom(
+            baseRoom = FakeBaseRoom(
+                canUserSendMessageResult = { _, _ -> Result.success(false) },
+            ),
+        )
+        val presenter = createTimelinePresenter(
+            room = room,
+            sendPollResponseAction = sendPollResponseAction,
+        )
+        moleculeFlow(RecompositionMode.Immediate) {
+            presenter.present()
+        }.test {
+            val initialState = awaitFirstItem()
+            initialState.eventSink.invoke(TimelineEvents.SelectPollAnswer(AN_EVENT_ID, "anAnswerId"))
+        }
+        delay(1)
+        sendPollResponseAction.verifyExecutionCount(1)
+    }
+
+    @Test
     fun `present - PollEndClicked event`() = runTest {
         val endPollAction = FakeEndPollAction()
         val presenter = createTimelinePresenter(

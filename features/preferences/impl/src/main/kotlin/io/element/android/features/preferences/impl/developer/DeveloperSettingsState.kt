@@ -26,6 +26,8 @@ data class DeveloperSettingsState(
     val tracingLogPacks: ImmutableList<TraceLogPack>,
     val isEnterpriseBuild: Boolean,
     val showColorPicker: Boolean,
+    /** Current chat background style: "default", "gradient", or "emoji". */
+    val chatBackgroundStyle: String,
     val eventSink: (DeveloperSettingsEvents) -> Unit
 ) {
     val showLoader = clearCacheAction is AsyncAction.Loading

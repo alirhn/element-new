@@ -157,6 +157,7 @@ class MessagesFlowNode(
         data class ForwardEvent(
             val eventId: EventId,
             val fromPinnedEvents: Boolean,
+            val eventIds: List<EventId> = listOf(eventId),
         ) : NavTarget
 
         @Parcelize
@@ -256,6 +257,17 @@ class MessagesFlowNode(
                         backstack.push(NavTarget.ForwardEvent(eventId, fromPinnedEvents = false))
                     }
 
+                    override fun forwardEvents(eventIds: List<EventId>) {
+                        if (eventIds.isEmpty()) return
+                        backstack.push(
+                            NavTarget.ForwardEvent(
+                                eventId = eventIds.first(),
+                                fromPinnedEvents = false,
+                                eventIds = eventIds,
+                            )
+                        )
+                    }
+
                     override fun navigateToReportMessage(eventId: EventId, senderId: UserId) {
                         backstack.push(NavTarget.ReportMessage(eventId, senderId))
                     }
@@ -352,7 +364,11 @@ class MessagesFlowNode(
                 } else {
                     timelineController
                 }
-                val params = ForwardEntryPoint.Params(navTarget.eventId, timelineProvider)
+                val params = ForwardEntryPoint.Params(
+                    eventId = navTarget.eventId,
+                    timelineProvider = timelineProvider,
+                    eventIds = navTarget.eventIds,
+                )
                 val callback = object : ForwardEntryPoint.Callback {
                     override fun onDone(roomIds: List<RoomId>) {
                         backstack.pop()

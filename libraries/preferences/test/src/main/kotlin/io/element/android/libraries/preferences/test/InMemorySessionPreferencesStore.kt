@@ -22,8 +22,10 @@ class InMemorySessionPreferencesStore(
     isSessionVerificationSkipped: Boolean = false,
     doesCompressMedia: Boolean = true,
     videoCompressionPreset: VideoCompressionPreset = VideoCompressionPreset.STANDARD,
+    chatBackgroundStyle: String = "default",
 ) : SessionPreferencesStore {
     private val isSharePresenceEnabled = MutableStateFlow(isSharePresenceEnabled)
+    private val chatBackgroundStyleFlow = MutableStateFlow(chatBackgroundStyle)
     private val isSendPublicReadReceiptsEnabled = MutableStateFlow(isSendPublicReadReceiptsEnabled)
     private val isRenderReadReceiptsEnabled = MutableStateFlow(isRenderReadReceiptsEnabled)
     private val isSendTypingNotificationsEnabled = MutableStateFlow(isSendTypingNotificationsEnabled)
@@ -83,6 +85,12 @@ class InMemorySessionPreferencesStore(
     override fun getVideoCompressionPreset(): Flow<VideoCompressionPreset> {
         return videoCompressionPreset
     }
+
+    override suspend fun setChatBackgroundStyle(style: String) {
+        chatBackgroundStyleFlow.value = style
+    }
+
+    override fun getChatBackgroundStyle(): Flow<String> = chatBackgroundStyleFlow
 
     override suspend fun clear() {
         clearCallCount++

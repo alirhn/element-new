@@ -35,5 +35,9 @@ interface SessionPreferencesStore {
     suspend fun setVideoCompressionPreset(preset: VideoCompressionPreset)
     fun getVideoCompressionPreset(): Flow<VideoCompressionPreset>
 
+    /** Chat background style: "default", "gradient", or "emoji". */
+    suspend fun setChatBackgroundStyle(style: String)
+    fun getChatBackgroundStyle(): Flow<String>
+
     suspend fun clear()
 }

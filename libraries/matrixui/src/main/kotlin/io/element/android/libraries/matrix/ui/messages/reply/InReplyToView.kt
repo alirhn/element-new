@@ -192,13 +192,14 @@ private fun ReplyToContentText(metadata: InReplyToMetadata?) {
             )
             Spacer(modifier = Modifier.width(4.dp))
         }
+        // Single-level reply: only one previous text level shown (instruction requirement)
         Text(
             text = text,
             style = ElementTheme.typography.fontBodyMdRegular,
             fontStyle = fontStyle,
             textAlign = TextAlign.Start,
             color = ElementTheme.colors.textSecondary,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }

@@ -42,6 +42,7 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.components.avatar.getBestName
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
+import io.element.android.libraries.designsystem.theme.components.CircularProgressIndicator
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.matrix.api.timeline.item.event.LocalEventSendState
@@ -79,12 +80,32 @@ fun TimelineItemReadReceiptView(
         when (state.sendState) {
             is LocalEventSendState.Sending -> {
                 ReadReceiptsRow(modifier) {
-                    Icon(
-                        modifier = Modifier.padding(2.dp),
-                        imageVector = CompoundIcons.Circle(),
-                        contentDescription = stringResource(id = CommonStrings.common_sending),
-                        tint = ElementTheme.colors.iconSecondary
-                    )
+                    val mediaProgress = state.sendState as? LocalEventSendState.Sending.MediaWithProgress
+                    if (mediaProgress != null && mediaProgress.total > 0) {
+                        val fraction = mediaProgress.progress.toFloat() / mediaProgress.total.toFloat()
+                        val percent = (fraction * 100).toInt()
+                        CircularProgressIndicator(
+                            progress = { fraction },
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = ElementTheme.colors.iconSecondary,
+                        )
+                        Text(
+                            text = "$percent%",
+                            style = ElementTheme.typography.fontBodyXsRegular,
+                            color = ElementTheme.colors.textSecondary,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    } else {
+                        Icon(
+                            modifier = Modifier.padding(2.dp),
+                            imageVector = CompoundIcons.Circle(),
+                            contentDescription = stringResource(id = CommonStrings.common_sending),
+                            tint = ElementTheme.colors.iconSecondary
+                        )
+                    }
                 }
             }
             is LocalEventSendState.Failed -> {

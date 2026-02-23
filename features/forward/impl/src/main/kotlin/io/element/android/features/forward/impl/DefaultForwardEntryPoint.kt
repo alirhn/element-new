@@ -29,6 +29,7 @@ class DefaultForwardEntryPoint : ForwardEntryPoint {
                 ForwardMessagesNode.Inputs(
                     eventId = params.eventId,
                     timelineProvider = params.timelineProvider,
+                    eventIds = params.eventIds,
                 ),
                 callback,
             )

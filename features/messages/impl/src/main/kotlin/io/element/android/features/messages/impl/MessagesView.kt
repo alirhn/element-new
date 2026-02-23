@@ -11,8 +11,10 @@ package io.element.android.features.messages.impl
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalView
@@ -74,6 +77,7 @@ import io.element.android.features.messages.impl.topbars.ThreadTopBar
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessagePermissionRationaleDialog
 import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessageSendingFailedDialog
 import io.element.android.libraries.androidutils.ui.hideKeyboard
+import io.element.android.libraries.designsystem.background.LightGradientBackground
 import io.element.android.libraries.designsystem.atomic.molecules.ComposerAlertMolecule
 import io.element.android.libraries.designsystem.components.ExpandableBottomSheetLayout
 import io.element.android.libraries.designsystem.components.ExpandableBottomSheetLayoutState
@@ -138,6 +142,10 @@ fun MessagesView(
     }
 
     fun onContentClick(event: TimelineItem.Event) {
+        if (state.isInSelectionMode) {
+            state.eventSink(MessagesEvents.ToggleMessageSelection(event))
+            return
+        }
         Timber.v("onMessageClick= ${event.id}")
         val hideKeyboard = onEventContentClick(state.timelineState.isLive, event)
         if (hideKeyboard) {
@@ -147,13 +155,17 @@ fun MessagesView(
 
     fun onMessageLongClick(event: TimelineItem.Event) {
         Timber.v("OnMessageLongClicked= ${event.id}")
-        hidingKeyboard {
-            state.actionListState.eventSink(
-                ActionListEvents.ComputeForMessage(
-                    event = event,
-                    userEventPermissions = state.userEventPermissions,
+        if (state.isInSelectionMode) {
+            state.eventSink(MessagesEvents.ToggleMessageSelection(event))
+        } else {
+            hidingKeyboard {
+                state.actionListState.eventSink(
+                    ActionListEvents.ComputeForMessage(
+                        event = event,
+                        userEventPermissions = state.userEventPermissions,
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -184,7 +196,13 @@ fun MessagesView(
             Scaffold(
                 contentWindowInsets = WindowInsets.statusBars,
                 topBar = {
-                    if (state.timelineState.timelineMode is Timeline.Mode.Thread) {
+                    if (state.isInSelectionMode) {
+                        SelectionTopBar(
+                            selectedCount = state.selectedEventIds.size,
+                            onCloseClick = { state.eventSink(MessagesEvents.ExitSelectionMode) },
+                            onForwardClick = { state.eventSink(MessagesEvents.ForwardSelectedMessages) },
+                        )
+                    } else if (state.timelineState.timelineMode is Timeline.Mode.Thread) {
                         ThreadTopBar(
                             roomName = state.roomName,
                             roomAvatarData = state.roomAvatar,
@@ -383,12 +401,29 @@ private fun MessagesViewContent(
     modifier: Modifier = Modifier,
     knockRequestsBannerView: @Composable () -> Unit,
 ) {
+    val chatBackgroundStyle = state.timelineState.timelineRoomInfo.chatBackgroundStyle
     Box(
         modifier = modifier
             .fillMaxSize()
             .navigationBarsPadding()
             .imePadding(),
     ) {
+        // Chat background (instruction: backgrounds like standard messengers, emoji options)
+        when (chatBackgroundStyle) {
+            "gradient" -> LightGradientBackground(
+                modifier = Modifier
+                    .matchParentSize()
+                    .alpha(0.25f),
+            )
+            "emoji" -> LightGradientBackground(
+                modifier = Modifier
+                    .matchParentSize()
+                    .alpha(0.2f),
+                firstColor = Color(0x330DBDA8),
+                secondColor = Color(0x1A0D5CBD),
+            )
+            else -> { /* default: no extra background */ }
+        }
         AttachmentsBottomSheet(
             state = state.composerState,
             onSendLocationClick = onSendLocationClick,
@@ -431,6 +466,7 @@ private fun MessagesViewContent(
                 onReadReceiptClick = onReadReceiptClick,
                 forceJumpToBottomVisibility = forceJumpToBottomVisibility,
                 onJoinCallClick = onJoinCallClick,
+                selectedEventIds = state.selectedEventIds,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
             )
 
@@ -529,6 +565,40 @@ private fun SuccessorRoomBanner(
         onSubmitClick = { onRoomSuccessorClick(roomSuccessor.roomId) },
         modifier = modifier,
         submitText = stringResource(R.string.screen_room_timeline_tombstoned_room_action)
+    )
+}
+
+@Composable
+private fun SelectionTopBar(
+    selectedCount: Int,
+    onCloseClick: () -> Unit,
+    onForwardClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    androidx.compose.material3.TopAppBar(
+        modifier = modifier,
+        title = {
+            Text(
+                text = "$selectedCount selected",
+                style = ElementTheme.typography.fontBodyLgMedium,
+            )
+        },
+        navigationIcon = {
+            androidx.compose.material3.IconButton(onClick = onCloseClick) {
+                io.element.android.libraries.designsystem.theme.components.Icon(
+                    imageVector = io.element.android.compound.tokens.generated.CompoundIcons.Close(),
+                    contentDescription = stringResource(id = CommonStrings.action_cancel),
+                )
+            }
+        },
+        actions = {
+            androidx.compose.material3.IconButton(onClick = onForwardClick) {
+                io.element.android.libraries.designsystem.theme.components.Icon(
+                    imageVector = io.element.android.compound.tokens.generated.CompoundIcons.Forward(),
+                    contentDescription = stringResource(id = CommonStrings.action_forward),
+                )
+            }
+        },
     )
 }
 
